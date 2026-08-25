@@ -72,6 +72,9 @@ class OperationEngine:
                 elif module_name == "other_capex":
                     for key, value in module_vars.items():
                         setattr(other_capEX_params, key, value)
+                elif module_name == "fixed_capex":
+                    for key, value in module_vars.items():
+                        setattr(params_jichucanshu, key, value)
 
         # ---------- 实例化所有子模块 ----------
         # 子模块类内部会从其对应的参数模块中读取最新值（因为它们也使用 import 模块方式）
