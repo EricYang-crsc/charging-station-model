@@ -342,6 +342,8 @@ with st.sidebar:
         label_visibility="collapsed",
         horizontal=True
     )
+    use_fixed_capex = False
+    fixed_capex_value = 0.0
 
     if mode == "反向求解":
         st.markdown("---")
@@ -395,26 +397,6 @@ with st.sidebar:
     loan_type = st.selectbox("还款方式", ["等额本息", "等额本金"])
     repayment_freq = st.selectbox("还款频率", ["年", "半年", "月"])
 
-    # ===== 新增：固定总投资模式 =====
-    st.markdown("---")
-    use_fixed_capex = st.checkbox(
-        "✅ 启用固定总投资模式",
-        value=params_jichucanshu.USE_FIXED_CAPEX,
-        help="启用后，将使用您指定的固定总投资额，各子模块投资按比例缩放"
-    )
-
-    fixed_capex_value = 0.0
-    if use_fixed_capex:
-        fixed_capex_value = st.number_input(
-            "固定总投资额（元）",
-            value=float(params_jichucanshu.FIXED_TOTAL_CAPEX) if params_jichucanshu.FIXED_TOTAL_CAPEX > 0 else 50000000.0,
-            min_value=1000000.0,
-            max_value=1000000000.0,
-            step=1000000.0,
-            format="%.0f",
-            help="请输入您希望固定的总投资额（元），各子模块投资将按比例缩放"
-        )
-        st.caption("💡 启用后，总投资将固定为您输入的金额，各子模块占比保持不变")
 
     # -------- 8个可折叠参数分类 --------
     st.markdown("---")
