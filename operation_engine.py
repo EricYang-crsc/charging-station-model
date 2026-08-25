@@ -1125,15 +1125,79 @@ def main():
         if target_type in ["irr_full", "irr_equity"]:
             print(f"  目标IRR值：{target_value:.4f}（即 {target_value * 100:.2f}%）")
 
-        # 创建引擎（使用默认参数：交流、等额本息）
-        print("\n🔍 使用默认参数进行反向求解...")
-        print("  技术路线：交流")
-        print("  还款方式：等额本息")
-        print("  土地租金搜索范围：0 ~ 10 万元/亩/年")
-        print("  求解精度：0.01% (IRR) 或 0.01年 (回收期)")
+        # ===== 新增：固定总投资模式 =====
+        print("\n【固定总投资模式】")
+        print("  说明：启用后，总投资将使用您指定的固定值，")
+        print("        各子模块投资按比例缩放，占比保持不变。")
+        print("  1. 启用固定总投资模式（手动输入总投资额）")
+        print("  2. 关闭固定总投资模式（使用各子模块自动计算的总投资）")
         print("-" * 40)
+        fixed_choice = input("请输入序号（1 或 2）：").strip()
 
-        engine = OperationEngine(technology="交流", loan_type="等额本息")
+        use_fixed_capex = False
+        fixed_total_capex = 0.0
+
+        if fixed_choice == "1":
+            fixed_total_input = input("请输入固定总投资额（元，如 50000000）：").strip()
+            try:
+                fixed_total = float(fixed_total_input)
+                if fixed_total <= 0:
+                    print("\n⚠️ 输入金额必须大于0，已自动关闭固定总投资模式")
+                else:
+                    use_fixed_capex = True
+                    fixed_total_capex = fixed_total
+                    print(f"✅ 固定总投资模式已启用，总投资额：{fixed_total:,.0f} 元")
+            except ValueError:
+                print("\n⚠️ 输入无效，已自动关闭固定总投资模式")
+        else:
+            print("✅ 固定总投资模式已关闭，使用各子模块自动计算的总投资")
+
+        # ===== 新增：还款方式选择 =====
+        print("\n【还款方式选择】")
+        print("  1. 等额本息")
+        print("  2. 等额本金")
+        print("-" * 40)
+        loan_choice = input("请输入序号（1 或 2）：").strip()
+
+        if loan_choice == "1":
+            loan_type = "等额本息"
+        elif loan_choice == "2":
+            loan_type = "等额本金"
+        else:
+            print("\n⚠️ 输入无效，默认使用等额本息")
+            loan_type = "等额本息"
+
+        print(f"✅ 已选择：{loan_type}还款方式")
+
+        # ===== 构建参数字典 =====
+        params_dict = {
+            "fixed_capex": {
+                "USE_FIXED_CAPEX": use_fixed_capex,
+                "FIXED_TOTAL_CAPEX": fixed_total_capex
+            }
+        }
+
+        # 技术路线固定为交流（反向求解中技术路线对结果影响不大）
+        technology = "交流"
+
+        print("\n🔍 使用以下参数进行反向求解...")
+        print(f"  技术路线：{technology}（默认）")
+        print(f"  还款方式：{loan_type}")
+        if use_fixed_capex:
+            print(f"  固定总投资：{fixed_total_capex:,.0f} 元")
+        else:
+            print(f"  固定总投资：未启用（使用自动计算）")
+        print(f"  土地租金搜索范围：0 ~ 10 万元/亩/年")
+        print(f"  求解精度：0.01% (IRR) 或 0.01年 (回收期)")
+        print("-" * 40)
+        
+        # 创建引擎，传入还款方式和固定总投资参数
+        engine = OperationEngine(
+            technology=technology,
+            loan_type=loan_type,
+            params_dict=params_dict
+        )
+
         result_rent, result_metric, iterations = engine.solve_land_rent_for_target(
             target_type=target_type,
             target_value=target_value,
@@ -1149,7 +1213,10 @@ def main():
         print("✅ 反向求解完成！")
         print("=" * 60)
         print(f"  目标指标类型：{target_type}")
-        print(f"  目标值：{target_value}")
+        print(f"  目标值：{target_value:.4f}")
+        if use_fixed_capex:
+            print(f"  固定总投资：{fixed_total_capex:,.0f} 元")
+        print(f"  还款方式：{loan_type}")
         print(f"  求解出的土地租金单价：{result_rent:.4f} 万元/亩/年")
         print(f"  对应实际指标值：{result_metric:.4f}")
         print(f"  迭代次数：{iterations}")
