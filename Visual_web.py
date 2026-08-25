@@ -398,6 +398,33 @@ with st.sidebar:
     repayment_freq = st.selectbox("还款频率", ["年", "半年", "月"])
 
 
+    # ===== 正常测算模式下的固定总投资（只在正常测算时显示） =====
+    if mode == "正常测算":
+        st.markdown("---")
+        use_fixed_capex = st.checkbox(
+            "✅ 启用固定总投资模式",
+            value=params_jichucanshu.USE_FIXED_CAPEX,
+            help="启用后，将使用您指定的固定总投资额，各子模块投资按比例缩放"
+        )
+        fixed_capex_value = 0.0
+        if use_fixed_capex:
+            fixed_capex_value = st.number_input(
+                "固定总投资额（元）",
+                value=float(params_jichucanshu.FIXED_TOTAL_CAPEX) if params_jichucanshu.FIXED_TOTAL_CAPEX > 0 else 50000000.0,
+                min_value=1000000.0,
+                max_value=1000000000.0,
+                step=1000000.0,
+                format="%.0f",
+                help="请输入您希望固定的总投资额（元），各子模块投资将按比例缩放"
+            )
+            st.caption("💡 启用后，总投资将固定为您输入的金额，各子模块占比保持不变")
+        # 将这两个变量存储到 session_state 中，便于后续 param_values 引用
+        st.session_state['use_fixed_capex'] = use_fixed_capex
+        st.session_state['fixed_capex_value'] = fixed_capex_value
+    else:
+        # 反向求解模式下，从 session_state 中读取默认值（或直接设为 False）
+        st.session_state['use_fixed_capex'] = False
+        st.session_state['fixed_capex_value'] = 0.0
     # -------- 8个可折叠参数分类 --------
     st.markdown("---")
     st.markdown("### 📊 参数调整面板")
