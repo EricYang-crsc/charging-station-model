@@ -1,39 +1,7 @@
 # ==================== other_capEX_systems.py ====================
-# 其他资本性支出运算逻辑
+# 其他资本性支出运算逻辑（动态读取参数）
 
-from other_capEX_params import (
-    # 电气设备
-    TRANSFORMER_COST,
-    CABLE_COST,
-    SWITCHGEAR_COST,
-    MONITORING_SYSTEM_COST,
-    EMS_COST,
-    OPERATION_PLATFORM_COST,
-    FIRE_ALARM_COST,
-    # 工程建设
-    STEEL_STRUCTURE_COST,
-    CIVIL_CONSTRUCTION_COST,
-    PROJECT_MANAGEMENT_COST,
-    # 设计咨询
-    DESIGN_FEE,
-    GEOTECHNICAL_PRICE_PER_METER,
-    GEOTECHNICAL_METER_NUM,
-    # 监理审图
-    SUPERVISION_FEE,
-    PLAN_REVIEW_FEE,
-    # 暂列金
-    PROVISIONAL_SUM,
-    # 土地首期租赁
-    LAND_LEASE_YEARS_INITIAL,
-    # 折旧与摊销
-    DEPRECIATION_YEARS,
-    RESIDUAL_RATE,
-    AMORTIZATION_YEARS,
-    # 基本预备费
-    BASIC_CONTINGENCY_FEE,
-    # 其它费用
-    OTHER_COST
-)
+import other_capEX_params
 from params_jichucanshu import PROJECT_YEARS
 from params_operating_cost import LAND_AREA, LAND_RENT_PER_MU
 
@@ -56,53 +24,51 @@ class OtherCapEXSystem:
     - 每年折旧额（固定资产，20年，残值率5%）
     - 每年摊销额（无形资产及其他，20年）
     - 残值
+
+    所有参数动态从 other_capEX_params 模块读取，修改参数文件后无需修改本文件
     """
 
     def __init__(self):
-        """初始化其他资本性支出，所有参数从对应文件读取"""
+        """初始化其他资本性支出，所有参数从对应文件动态读取"""
         # ---------- 电气设备 ----------
-        self.transformer = TRANSFORMER_COST
-        self.cable = CABLE_COST
-        self.switchgear = SWITCHGEAR_COST
-        self.monitoring = MONITORING_SYSTEM_COST
-        self.ems = EMS_COST
-        self.platform = OPERATION_PLATFORM_COST
-        self.fire_alarm = FIRE_ALARM_COST
+        self.transformer = other_capEX_params.TRANSFORMER_COST
+        self.cable = other_capEX_params.CABLE_COST
+        self.switchgear = other_capEX_params.SWITCHGEAR_COST
+        self.monitoring = other_capEX_params.MONITORING_SYSTEM_COST
+        self.ems = other_capEX_params.EMS_COST
+        self.platform = other_capEX_params.OPERATION_PLATFORM_COST
+        self.fire_alarm = other_capEX_params.FIRE_ALARM_COST
 
         # ---------- 工程建设 ----------
-        self.steel = STEEL_STRUCTURE_COST
-        self.civil = CIVIL_CONSTRUCTION_COST
-        self.project_management = PROJECT_MANAGEMENT_COST
+        self.steel = other_capEX_params.STEEL_STRUCTURE_COST
+        self.civil = other_capEX_params.CIVIL_CONSTRUCTION_COST
+        self.project_management = other_capEX_params.PROJECT_MANAGEMENT_COST
 
         # ---------- 设计咨询 ----------
-        self.design = DESIGN_FEE
-        self.geotech_price_per_meter = GEOTECHNICAL_PRICE_PER_METER    # 地勘单价：元/延米
-        self.geotech_meter_num = GEOTECHNICAL_METER_NUM                # 地勘总延米数
+        self.design = other_capEX_params.DESIGN_FEE
+        self.geotech_price_per_meter = other_capEX_params.GEOTECHNICAL_PRICE_PER_METER
+        self.geotech_meter_num = other_capEX_params.GEOTECHNICAL_METER_NUM
 
         # ---------- 监理审图 ----------
-        self.supervision = SUPERVISION_FEE
-        self.plan_review = PLAN_REVIEW_FEE
+        self.supervision = other_capEX_params.SUPERVISION_FEE
+        self.plan_review = other_capEX_params.PLAN_REVIEW_FEE
 
         # ---------- 暂列金 ----------
-        self.provisional = PROVISIONAL_SUM
+        self.provisional = other_capEX_params.PROVISIONAL_SUM
 
         # ---------- 土地首期租赁 ----------
-        # 首期租赁年限（用户自定义，1~3年）
-        self.land_lease_years_initial = LAND_LEASE_YEARS_INITIAL
-        # 首期租赁费用由引擎层动态计算，不在此处硬编码
-        # 计算公式：首期租赁费（万元）= LAND_AREA × LAND_RENT_PER_MU × LAND_LEASE_YEARS_INITIAL
-        # 首期租赁费计入固定资产，按20年折旧，残值率5%
+        self.land_lease_years_initial = other_capEX_params.LAND_LEASE_YEARS_INITIAL
 
-        # ---------- 其它费用（预留入口） ----------
-        self.other_cost = OTHER_COST
+        # ---------- 其它费用 ----------
+        self.other_cost = other_capEX_params.OTHER_COST
 
         # ---------- 基本预备费 ----------
-        self.contingency = BASIC_CONTINGENCY_FEE
+        self.contingency = other_capEX_params.BASIC_CONTINGENCY_FEE
 
         # ---------- 折旧与摊销 ----------
-        self.dep_years = DEPRECIATION_YEARS
-        self.residual_rate = RESIDUAL_RATE
-        self.amort_years = AMORTIZATION_YEARS
+        self.dep_years = other_capEX_params.DEPRECIATION_YEARS
+        self.residual_rate = other_capEX_params.RESIDUAL_RATE
+        self.amort_years = other_capEX_params.AMORTIZATION_YEARS
 
         # ---------- 土地参数（从运营成本参数读取） ----------
         self.land_area = LAND_AREA
