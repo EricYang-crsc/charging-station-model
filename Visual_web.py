@@ -860,12 +860,15 @@ else:
                 # 获取还款方式（从反向求解区域的 selectbox 获取）
                 solve_loan_type = st.session_state.get("solve_loan_type", "等额本息")
 
-                # 构建固定总投资参数字典
-                solve_params = {
-                    "fixed_capex": {
-                        "USE_FIXED_CAPEX": solve_use_fixed,
-                        "FIXED_TOTAL_CAPEX": solve_fixed_value if solve_use_fixed else 0.0
-                    }
+                # 从 param_values 复制所有参数（深拷贝避免引用）
+                solve_params = {}
+                for key, value in param_values.items():
+                    solve_params[key] = value
+
+                # 用反向求解专属的固定总投资参数覆盖 param_values 中的 fixed_capex
+                solve_params["fixed_capex"] = {
+                    "USE_FIXED_CAPEX": solve_use_fixed,
+                    "FIXED_TOTAL_CAPEX": solve_fixed_value if solve_use_fixed else 0.0
                 }
 
                 # 创建引擎并执行反向求解
