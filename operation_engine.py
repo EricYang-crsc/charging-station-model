@@ -1101,12 +1101,29 @@ def main():
             return
 
         # 输入目标值
-        target_value_input = input("请输入目标值（IRR输入小数如0.08，回收期输入年数如8.5）：").strip()
+        target_value_input = input("请输入目标值（IRR输入小数如0.0851，回收期输入年数如8.5）：").strip()
         try:
+            # 先尝试直接转换为浮点数
             target_value = float(target_value_input)
         except ValueError:
-            print("❌ 输入无效，请确保输入数字")
-            return
+            # 如果转换失败，检查是否是百分比格式（如"8.51"或"8.51%"）
+            try:
+                # 去除可能的%符号
+                cleaned_input = target_value_input.replace("%", "").strip()
+                temp_value = float(cleaned_input)
+                # 如果数值大于1，说明用户输入的是百分比（如8.51），自动除以100
+                if temp_value > 1:
+                    target_value = temp_value / 100
+                    print(f"  识别为百分比格式，自动转换：{temp_value}% → {target_value:.4f}")
+                else:
+                    target_value = temp_value
+            except ValueError:
+                print("❌ 输入无效，请确保输入数字")
+                return
+
+        # 精度检查：如果是IRR目标，提示用户确认精度
+        if target_type in ["irr_full", "irr_equity"]:
+            print(f"  目标IRR值：{target_value:.4f}（即 {target_value * 100:.2f}%）")
 
         # 创建引擎（使用默认参数：交流、等额本息）
         print("\n🔍 使用默认参数进行反向求解...")
