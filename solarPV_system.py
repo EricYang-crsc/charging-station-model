@@ -1,18 +1,7 @@
 # ==================== solarPV_system.py ====================
-# 光伏系统单元 - 完整运算逻辑
+# 光伏系统单元 - 完整运算逻辑（动态读取参数）
 
-from solarPV_params import (
-    PV_CAPACITY,
-    PEAK_SUN_HOURS,
-    PV_DEGRADATION,
-    PV_LIFETIME,
-    PV_COST_PER_W,
-    PV_INVERTER_COST,
-    PV_BRACKET_COST,
-    PV_OPEX_PER_W,
-    PV_DEPRECIATION_YEARS,
-    PV_RESIDUAL_RATE
-)
+import solarPV_params
 from params_jichucanshu import PROJECT_YEARS
 
 
@@ -21,25 +10,29 @@ class PVSystem:
     光伏系统类
     负责计算光伏系统的：
     - 每年发电量
-    - 初始投资（CapEx）= 光伏组件 + 逆变器 + 支吊架
+    - 初始投资（CapEx）
     - 每年运维成本（OpEx）
     - 每年折旧额
     - 残值
+
+    所有参数动态从 solarPV_params 模块读取，修改参数文件后无需修改本文件
     """
 
     def __init__(self):
-        """初始化光伏系统，所有参数从对应文件读取"""
-        self.capacity = PV_CAPACITY                # 装机容量（kWp）
-        self.peak_sun_hours = PEAK_SUN_HOURS       # 峰值日照小时数（小时/天）
-        self.degradation = PV_DEGRADATION          # 年衰减率
-        self.lifetime = PV_LIFETIME                # 使用寿命（年）
-        self.cost_per_w = PV_COST_PER_W            # 光伏组件单位投资成本（元/W）
-        self.inverter_cost = PV_INVERTER_COST      # 逆变器投入（万元）
-        self.bracket_cost = PV_BRACKET_COST        # 支吊架投入（万元）
-        self.opex_per_w = PV_OPEX_PER_W            # 年运维费（元/W）
-        self.depreciation_years = PV_DEPRECIATION_YEARS  # 折旧年限（年）
-        self.residual_rate = PV_RESIDUAL_RATE      # 残值率
-        self.years = PROJECT_YEARS                 # 项目周期（年）
+        """初始化光伏系统，所有参数从 solarPV_params 动态读取"""
+        # ---------- 从参数模块动态读取所有参数 ----------
+        self.capacity = solarPV_params.PV_CAPACITY                # 装机容量（kWp）
+        self.peak_sun_hours = solarPV_params.PEAK_SUN_HOURS       # 峰值日照小时数（小时/天）
+        self.degradation = solarPV_params.PV_DEGRADATION          # 年衰减率
+        self.lifetime = solarPV_params.PV_LIFETIME                # 使用寿命（年）
+        self.cost_per_w = solarPV_params.PV_COST_PER_W            # 组件单位投资成本（元/W）
+        self.inverter_cost = solarPV_params.PV_INVERTER_COST      # 逆变器投入（万元）
+        self.bracket_cost = solarPV_params.PV_BRACKET_COST        # 支吊架投入（万元）
+        self.opex_per_w = solarPV_params.PV_OPEX_PER_W            # 年运维费（元/W）
+        self.depreciation_years = solarPV_params.PV_DEPRECIATION_YEARS  # 折旧年限（年）
+        self.residual_rate = solarPV_params.PV_RESIDUAL_RATE      # 残值率
+
+        self.years = PROJECT_YEARS                                # 项目周期（年）
 
     def calc_annual_output(self):
         """
