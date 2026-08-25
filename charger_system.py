@@ -1,26 +1,7 @@
 # ==================== charger_system.py ====================
-# 充电系统单元 - 完整运算逻辑（支持交流/直流技术路线）
+# 充电系统单元 - 完整运算逻辑（支持交流/直流技术路线，动态读取参数）
 
-from charger_params import (
-    CHARGER_COUNT,
-    GUN_COUNT,
-    CHARGER_STACK_COUNT,
-    CHARGER_STACK_COST_AC,
-    CHARGER_STACK_COST_DC,
-    CHARGER_DAILY_OUTPUT,
-    CHARGER_OPERATING_DAYS,
-    CHARGER_SIMULTANEITY,
-    CHARGER_COST_PER_UNIT_AC,
-    CHARGER_COST_PER_UNIT_DC,
-    CHARGER_OPEX_FIXED,
-    CHARGER_UNIT_LIFETIME,
-    CHARGER_UNIT_DEPRECIATION_YEARS,
-    CHARGER_UNIT_RESIDUAL_RATE,
-    CHARGER_STACK_LIFETIME,
-    CHARGER_STACK_DEPRECIATION_YEARS,
-    CHARGER_STACK_RESIDUAL_RATE,
-    CHARGER_EFFICIENCY
-)
+import charger_params
 from params_jichucanshu import PROJECT_YEARS
 
 
@@ -39,6 +20,8 @@ class ChargerSystem:
     技术路线支持：
     - 交流技术路线：交流充电桩 + 交流充电堆
     - 直流技术路线：直流充电桩 + 直流充电堆
+
+    所有参数动态从 charger_params 模块读取，修改参数文件后无需修改本文件
     """
 
     def __init__(self, technology="交流"):
@@ -47,48 +30,49 @@ class ChargerSystem:
 
         :param technology: 技术路线，可选 "交流" 或 "直流"，默认"交流"
         """
+        # ---------- 从参数模块动态读取所有参数 ----------
         # 充电桩规模
-        self.charger_count = CHARGER_COUNT              # 充电桩数量（台）
-        self.gun_count = GUN_COUNT                      # 充电枪数量（把）
+        self.charger_count = charger_params.CHARGER_COUNT
+        self.gun_count = charger_params.GUN_COUNT
 
         # 充电堆
-        self.stack_count = CHARGER_STACK_COUNT          # 充电堆数量（个）
+        self.stack_count = charger_params.CHARGER_STACK_COUNT
 
         # 技术路线选择
         self.technology = technology
 
         # 根据技术路线选择对应的单价
         if technology == "交流":
-            self.cost_per_unit = CHARGER_COST_PER_UNIT_AC
-            self.stack_cost = CHARGER_STACK_COST_AC
+            self.cost_per_unit = charger_params.CHARGER_COST_PER_UNIT_AC
+            self.stack_cost = charger_params.CHARGER_STACK_COST_AC
         elif technology == "直流":
-            self.cost_per_unit = CHARGER_COST_PER_UNIT_DC
-            self.stack_cost = CHARGER_STACK_COST_DC
+            self.cost_per_unit = charger_params.CHARGER_COST_PER_UNIT_DC
+            self.stack_cost = charger_params.CHARGER_STACK_COST_DC
         else:
             raise ValueError(f"未知的技术路线：{technology}，请选择'交流'或'直流'")
 
         # 运营负荷
-        self.daily_output = CHARGER_DAILY_OUTPUT        # 单桩日均充电量（kWh/天）
-        self.operating_days = CHARGER_OPERATING_DAYS    # 年运营天数（天/年）
-        self.simultaneity = CHARGER_SIMULTANEITY        # 负荷同时率
+        self.daily_output = charger_params.CHARGER_DAILY_OUTPUT
+        self.operating_days = charger_params.CHARGER_OPERATING_DAYS
+        self.simultaneity = charger_params.CHARGER_SIMULTANEITY
 
         # 投资与成本
-        self.opex_fixed = CHARGER_OPEX_FIXED            # 年运维费（元/年）
+        self.opex_fixed = charger_params.CHARGER_OPEX_FIXED
 
         # ---------- 折旧与残值（充电桩） ----------
-        self.charger_lifetime = CHARGER_UNIT_LIFETIME                # 充电桩设计寿命（年）= 8
-        self.charger_dep_years = CHARGER_UNIT_DEPRECIATION_YEARS     # 充电桩初始折旧年限（年）= 8
-        self.charger_residual_rate = CHARGER_UNIT_RESIDUAL_RATE      # 充电桩残值率（8%）
+        self.charger_lifetime = charger_params.CHARGER_UNIT_LIFETIME
+        self.charger_dep_years = charger_params.CHARGER_UNIT_DEPRECIATION_YEARS
+        self.charger_residual_rate = charger_params.CHARGER_UNIT_RESIDUAL_RATE
 
         # ---------- 折旧与残值（充电堆） ----------
-        self.stack_lifetime = CHARGER_STACK_LIFETIME                 # 充电堆设计寿命（年）= 8
-        self.stack_dep_years = CHARGER_STACK_DEPRECIATION_YEARS      # 充电堆折旧年限（年）= 8
-        self.stack_residual_rate = CHARGER_STACK_RESIDUAL_RATE       # 充电堆残值率（8%）
+        self.stack_lifetime = charger_params.CHARGER_STACK_LIFETIME
+        self.stack_dep_years = charger_params.CHARGER_STACK_DEPRECIATION_YEARS
+        self.stack_residual_rate = charger_params.CHARGER_STACK_RESIDUAL_RATE
 
         # 效率
-        self.efficiency = CHARGER_EFFICIENCY            # 充电效率
+        self.efficiency = charger_params.CHARGER_EFFICIENCY
 
-        self.years = PROJECT_YEARS                      # 项目周期（年）= 20
+        self.years = PROJECT_YEARS
 
     # ======================== 投资计算 ========================
 
