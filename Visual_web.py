@@ -356,6 +356,36 @@ with st.sidebar:
             step=0.01,
             format="%.4f"
         )
+        # ===== 新增：反向求解模式下的还款方式选择 =====
+        st.markdown("---")
+        st.markdown("### 💳 还款方式")
+        solve_loan_type = st.selectbox(
+            "选择还款方式",
+            ["等额本息", "等额本金"],
+            key="solve_loan_type",
+            help="选择反向求解时使用的还款方式"
+        )
+        # ===== 新增：反向求解模式下的固定总投资 =====
+        st.markdown("---")
+        st.markdown("### 💰 固定总投资模式")
+        solve_use_fixed = st.checkbox(
+            "启用固定总投资模式",
+            value=False,
+            key="solve_use_fixed",
+            help="启用后，反向求解将在指定的总投资额下进行"
+        )
+        solve_fixed_value = 0.0
+        if solve_use_fixed:
+            solve_fixed_value = st.number_input(
+                "固定总投资额（元）",
+                value=50000000.0,
+                min_value=1000000.0,
+                max_value=1000000000.0,
+                step=1000000.0,
+                format="%.0f",
+                key="solve_fixed_value",
+                help="请输入固定总投资额"
+            )
         st.caption("💡 系统将在0~10万元/亩/年范围内求解土地租金单价")
 
     # -------- 技术路线与还款方式 --------
@@ -832,10 +862,64 @@ else:
     # 反向求解模式：点击按钮后才计算
     if 'solve_btn' in locals() and solve_btn:
         with st.spinner("🔍 正在求解中，请稍候..."):
-            st.info("反向求解模式开发中...")
-            results = None
-    else:
-        results = None
+            try:
+                # 映射目标类型
+                target_map = {
+                    "全投资IRR": "irr_full",
+                    "自有资金IRR": "irr_equity",
+                    "全投资回收期": "payback_full",
+                    "自有资金回收期": "payback_equity"
+                }
+                target_type_eng = target_map.get(target_type, "irr_full")
+
+                # 技术路线固定为交流（反向求解中技术路线对结果影响不大）
+                solve_technology = "交流"
+
+                # 获取还款方式（从反向求解区域的 selectbox 获取）
+                solve_loan_type = st.session_state.get("solve_loan_type", "等额本息")
+
+                # 构建固定总投资参数字典
+                solve_params = {
+                    "fixed_capex": {
+                        "USE_FIXED_CAPEX": solve_use_fixed,
+                        "FIXED_TOTAL_CAPEX": solve_fixed_value if solve_use_fixed else 0.0
+                    }
+                }
+
+                # 创建引擎并执行反向求解
+                from operation_engine import OperationEngine
+
+                engine = OperationEngine(
+                    technology=solve_technology,
+                    loan_type=solve_loan_type,
+                    params_dict=solve_params
+                )
+
+                result_rent, result_metric, iterations = engine.solve_land_rent_for_target(
+                    target_type=target_type_eng,
+                    target_value=target_value,
+                    precision=0.0001
+                )
+
+                # 存储结果到 session_state
+                st.session_state['solve_result'] = {
+                    'rent': result_rent,
+                    'metric': result_metric,
+                    'iterations': iterations,
+                    'target_type': target_type,
+                    'target_value': target_value,
+                    'loan_type': solve_loan_type,
+                    'use_fixed': solve_use_fixed,
+                    'fixed_value': solve_fixed_value if solve_use_fixed else None
+                }
+
+                if result_rent is None:
+                    st.error("❌ 目标值无法达到，请检查目标值是否在合理范围内。")
+                else:
+                    st.success("✅ 反向求解完成！")
+
+            except Exception as e:
+                st.error(f"❌ 求解失败：{e}")
 
 # ---- 显示结果 ----
 if mode == "正常测算" and results:
@@ -1100,10 +1184,65 @@ if mode == "正常测算" and results:
     """, unsafe_allow_html=True)
 
 # ---- 反向求解结果显示 ----
-elif mode == "反向求解" and 'solve_btn' in locals() and solve_btn:
-    st.markdown("---")
-    st.markdown("### 🔍 反向求解结果")
-    st.info("💡 反向求解功能开发中，敬请期待...")
+elif mode == "反向求解":
+    # 检查是否有求解结果
+    if 'solve_result' in st.session_state and st.session_state['solve_result'] is not None:
+        res = st.session_state['solve_result']
+
+        if res['rent'] is None:
+            st.markdown("---")
+            st.markdown("### 🔍 反向求解结果")
+            st.error(f"❌ 目标值 {res['target_value']:.4f} 无法达到，请检查目标值是否在合理范围内。")
+        else:
+            st.markdown("---")
+            st.markdown("### 🔍 反向求解结果")
+
+            # 显示配置信息
+            col_config1, col_config2 = st.columns(2)
+            with col_config1:
+                st.markdown(f"**目标指标**：{res['target_type']}")
+                st.markdown(f"**目标值**：{res['target_value']:.4f}")
+            with col_config2:
+                st.markdown(f"**还款方式**：{res['loan_type']}")
+                if res['use_fixed'] and res['fixed_value']:
+                    st.markdown(f"**固定总投资**：¥{res['fixed_value']:,.0f}")
+                else:
+                    st.markdown("**固定总投资**：未启用")
+
+            # 求解结果
+            st.markdown("---")
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("土地租金单价", f"{res['rent']:.4f} 万元/亩/年")
+            with col2:
+                st.metric("对应实际指标值", f"{res['metric']:.4f}")
+            with col3:
+                st.metric("迭代次数", f"{res['iterations']} 次")
+
+            st.caption(f"精度误差：{abs(res['metric'] - res['target_value']):.6f}")
+
+            # 查看详细财务结果按钮
+            if st.button("📊 查看该租金下的详细财务结果"):
+                with st.spinner("正在加载详细财务结果..."):
+                    # 重新运行引擎，传入求解出的租金
+                    solve_params = {
+                        "fixed_capex": {
+                            "USE_FIXED_CAPEX": res['use_fixed'],
+                            "FIXED_TOTAL_CAPEX": res['fixed_value'] if res['use_fixed'] else 0.0
+                        }
+                    }
+                    from operation_engine import OperationEngine
+
+                    engine = OperationEngine(
+                        technology="交流",
+                        loan_type=res['loan_type'],
+                        params_dict=solve_params
+                    )
+                    detailed_results = engine._run_core(rent_per_mu=res['rent'], print_output=False)
+                    st.info("💡 详细财务结果展示功能开发中...")
+    else:
+        # 未点击求解按钮时的提示
+        st.info("请设置目标指标和目标值，然后点击「求解土地租金」按钮。")
 
 # ======================== 运行说明 ========================
 
